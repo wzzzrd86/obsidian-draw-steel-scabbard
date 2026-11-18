@@ -451,6 +451,9 @@ class ScabbardView extends ItemView {
     this.allItems = [];
     this.searchQuery = '';
     this.activeCategory = plugin.settings.defaultCategory || 'Weapons';
+    this.activeEchelon = 'All';
+    this.selectedItemIds = new Set();
+    this.rolledRewards = [];
     this.isLoading = false;
   }
 
@@ -498,6 +501,7 @@ class ScabbardView extends ItemView {
       header.empty();
     }
 
+    // Title Row
     const titleRow = header.createDiv({ cls: 'scabbard-title-row' });
     const title = titleRow.createDiv({ cls: 'scabbard-title' });
     const iconSpan = title.createSpan();
@@ -506,11 +510,11 @@ class ScabbardView extends ItemView {
     title.createSpan({ cls: 'scabbard-badge-source', text: 'Live API' });
 
     const actions = titleRow.createDiv({ cls: 'scabbard-header-actions' });
-    
     const refreshBtn = actions.createEl('button', { cls: 'scabbard-icon-btn', attr: { title: 'Refresh from Scabbard' } });
     setIcon(refreshBtn, 'refresh-cw');
     refreshBtn.onclick = () => this.loadAndRender();
 
+    // Search Row
     const searchRow = header.createDiv({ cls: 'scabbard-search-row' });
     const searchInput = searchRow.createEl('input', {
       cls: 'scabbard-search-input',
@@ -531,6 +535,7 @@ class ScabbardView extends ItemView {
       };
     }
 
+    // Category Pills Row
     const pillsRow = header.createDiv({ cls: 'scabbard-pills-row' });
     const categories = [
       { key: 'Weapons', label: 'Weapons' },
@@ -553,8 +558,275 @@ class ScabbardView extends ItemView {
       };
     });
 
+    // Tools Row: Echelon Filter + 🎲 Random Button
+    const toolsRow = header.createDiv({ cls: 'scabbard-tools-row' });
+
+    const echelonGroup = toolsRow.createDiv({ cls: 'scabbard-tool-group' });
+    echelonGroup.createSpan({ cls: 'scabbard-tool-label', text: 'Echelon:' });
+    const echelonSelect = echelonGroup.createEl('select', { cls: 'scabbard-select' });
+    const echelons = [
+      { value: 'All', label: 'All Echelons' },
+      { value: '1st-Echelon', label: '1st Echelon' },
+      { value: '2nd-Echelon', label: '2nd Echelon' },
+      { value: '3rd-Echelon', label: '3rd Echelon' },
+      { value: '4th-Echelon', label: '4th Echelon' },
+      { value: 'Leveled (1st-9th)', label: 'Leveled (1st-9th)' },
+      { value: 'Artifact', label: 'Artifact' }
+    ];
+    echelons.forEach(ech => {
+      const opt = echelonSelect.createEl('option', { value: ech.value, text: ech.label });
+      if (ech.value === this.activeEchelon) opt.selected = true;
+    });
+    echelonSelect.onchange = (e) => {
+      this.activeEchelon = e.target.value;
+      this.renderCards();
+    };
+
+    const randomBtn = toolsRow.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-random',
+      attr: { title: 'Roll 2-3 random items from this echelon or selection' }
+    });
+    const diceIcon = randomBtn.createSpan();
+    setIcon(diceIcon, 'dice');
+    randomBtn.createSpan({ text: 'Random (2-3)' });
+    randomBtn.onclick = () => this.rollRandomItems();
+
+    // Multi-Selection Action Bar (Docked when items are selected)
+    const selectionBar = header.createDiv({ cls: 'scabbard-selection-bar' });
+    selectionBar.id = 'scabbard-selection-bar';
+    if (this.selectedItemIds.size === 0) {
+      selectionBar.style.display = 'none';
+    }
+    this.renderSelectionBarContent(selectionBar);
+
+    // Meta count row
     const metaRow = header.createDiv({ cls: 'scabbard-meta-row' });
     metaRow.id = 'scabbard-meta-count';
+  }
+
+  renderSelectionBarContent(bar) {
+    bar.empty();
+    const count = this.selectedItemIds.size;
+    if (count === 0) {
+      bar.style.display = 'none';
+      return;
+    }
+    bar.style.display = 'flex';
+
+    const info = bar.createDiv({ cls: 'scabbard-selection-info' });
+    const checkIcon = info.createSpan();
+    setIcon(checkIcon, 'check');
+    info.createSpan({ cls: 'scabbard-selection-count', text: `${count} Selected` });
+
+    const btnGroup = bar.createDiv({ cls: 'scabbard-selection-actions' });
+
+    // Insert Links Button
+    const linkBtn = btnGroup.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-primary',
+      text: `+ Links (${count})`,
+      attr: { title: 'Insert wikilinks for all selected items into active note' }
+    });
+    linkBtn.onmousedown = (e) => e.preventDefault();
+    linkBtn.onclick = (e) => {
+      e.preventDefault();
+      this.insertMultipleItemsAtCursor('link');
+    };
+
+    // Insert Cards Button
+    const cardBtn = btnGroup.createEl('button', {
+      cls: 'scabbard-btn-sm',
+      text: `+ Cards (${count})`,
+      attr: { title: 'Insert callout cards for all selected items into active note' }
+    });
+    cardBtn.onmousedown = (e) => e.preventDefault();
+    cardBtn.onclick = (e) => {
+      e.preventDefault();
+      this.insertMultipleItemsAtCursor('card');
+    };
+
+    // Roll 2-3 from Selection (if >= 2 items selected)
+    if (count >= 2) {
+      const rollSelBtn = btnGroup.createEl('button', {
+        cls: 'scabbard-btn-sm scabbard-btn-random',
+        text: '🎲 Roll 2-3',
+        attr: { title: 'Pick 2-3 random items from these selected items' }
+      });
+      rollSelBtn.onclick = () => this.rollRandomItems(true);
+    }
+
+    // Batch Create Notes Button
+    const notesBtn = btnGroup.createEl('button', {
+      cls: 'scabbard-btn-sm',
+      text: `+ Notes (${count})`,
+      attr: { title: 'Create vault markdown notes for all selected items' }
+    });
+    notesBtn.onclick = async () => {
+      const selectedItems = this.allItems.filter(i => this.selectedItemIds.has(i.id));
+      let created = 0;
+      for (const item of selectedItems) {
+        const ok = await this.plugin.createItemNote(item, true);
+        if (ok !== false) created++;
+      }
+      new Notice(`Generated ${created} note(s) in ${this.plugin.settings.notesFolder || 'Compendium/Items'}`);
+    };
+
+    // Clear Selection Button
+    const clearBtn = btnGroup.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-clear',
+      text: 'Clear',
+      attr: { title: 'Deselect all items' }
+    });
+    clearBtn.onclick = () => {
+      this.selectedItemIds.clear();
+      this.updateSelectionUI();
+    };
+  }
+
+  updateSelectionUI() {
+    const bar = this.containerEl.querySelector('#scabbard-selection-bar');
+    if (bar) {
+      this.renderSelectionBarContent(bar);
+    }
+
+    const container = this.containerEl.children[1];
+    const cards = container.querySelectorAll('.scabbard-card');
+    cards.forEach(card => {
+      const id = card.getAttribute('data-item-id');
+      const isSelected = this.selectedItemIds.has(id);
+      if (isSelected) {
+        card.addClass('scabbard-card-selected');
+      } else {
+        card.removeClass('scabbard-card-selected');
+      }
+      const checkbox = card.querySelector('.scabbard-card-checkbox');
+      if (checkbox) {
+        checkbox.empty();
+        if (isSelected) {
+          checkbox.addClass('checked');
+          setIcon(checkbox, 'check');
+        } else {
+          checkbox.removeClass('checked');
+        }
+      }
+    });
+
+    const meta = container.querySelector('#scabbard-meta-count');
+    if (meta) {
+      const filtered = this.getFilteredItems();
+      const selText = this.selectedItemIds.size > 0 ? ` • ${this.selectedItemIds.size} selected` : ' • (Ctrl+Click to select)';
+      const echText = this.activeEchelon !== 'All' ? ` • ${this.activeEchelon}` : '';
+      meta.textContent = `Showing ${filtered.length} item(s) • ${this.activeCategory}${echText}${selText}`;
+    }
+  }
+
+  toggleItemSelection(id) {
+    if (this.selectedItemIds.has(id)) {
+      this.selectedItemIds.delete(id);
+    } else {
+      this.selectedItemIds.add(id);
+    }
+    this.updateSelectionUI();
+  }
+
+  rollRandomItems(fromSelectionOnly = false) {
+    let pool = [];
+
+    if (fromSelectionOnly && this.selectedItemIds.size >= 2) {
+      pool = this.allItems.filter(i => this.selectedItemIds.has(i.id));
+    } else {
+      pool = this.getFilteredItems();
+      if (pool.length === 0) {
+        pool = this.allItems;
+      }
+    }
+
+    if (pool.length === 0) {
+      new Notice('No items available to roll from.');
+      return;
+    }
+
+    // Pick 2 or 3 items randomly (or all if pool <= 2)
+    const count = pool.length <= 2 ? pool.length : (Math.random() < 0.5 ? 2 : 3);
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    const rolled = shuffled.slice(0, count);
+
+    this.rolledRewards = rolled;
+
+    // Auto-select rolled items
+    this.selectedItemIds.clear();
+    rolled.forEach(i => this.selectedItemIds.add(i.id));
+
+    new Notice(`🎲 Rolled ${rolled.length} random items: ${rolled.map(i => i.name).join(', ')}`);
+    this.render();
+  }
+
+  renderRolledBanner(container) {
+    if (!this.rolledRewards || this.rolledRewards.length === 0) return;
+
+    const banner = container.createDiv({ cls: 'scabbard-rolled-banner' });
+
+    const header = banner.createDiv({ cls: 'scabbard-rolled-header' });
+    const titleBox = header.createDiv({ cls: 'scabbard-rolled-title' });
+    const diceIcon = titleBox.createSpan();
+    setIcon(diceIcon, 'dice');
+    titleBox.createSpan({ text: `Rolled Rewards (${this.rolledRewards.length} items • ${this.activeEchelon})` });
+
+    const actionBox = header.createDiv({ cls: 'scabbard-rolled-actions' });
+
+    const linksBtn = actionBox.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-primary',
+      text: '+ Insert All Links',
+      attr: { title: 'Insert all rolled items as wikilinks into active note' }
+    });
+    linksBtn.onmousedown = (e) => e.preventDefault();
+    linksBtn.onclick = (e) => {
+      e.preventDefault();
+      this.insertMultipleItemsAtCursor('link', this.rolledRewards);
+    };
+
+    const cardsBtn = actionBox.createEl('button', {
+      cls: 'scabbard-btn-sm',
+      text: '+ Insert Cards',
+      attr: { title: 'Insert formatted callout cards for all rolled items' }
+    });
+    cardsBtn.onmousedown = (e) => e.preventDefault();
+    cardsBtn.onclick = (e) => {
+      e.preventDefault();
+      this.insertMultipleItemsAtCursor('card', this.rolledRewards);
+    };
+
+    const rerollBtn = actionBox.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-random',
+      text: 'Re-roll 🎲',
+      attr: { title: 'Roll again from this echelon' }
+    });
+    rerollBtn.onclick = () => this.rollRandomItems();
+
+    const closeBtn = actionBox.createEl('button', {
+      cls: 'scabbard-icon-btn',
+      attr: { title: 'Dismiss rolled banner' }
+    });
+    setIcon(closeBtn, 'x');
+    closeBtn.onclick = () => {
+      this.rolledRewards = [];
+      this.render();
+    };
+
+    const itemsGrid = banner.createDiv({ cls: 'scabbard-rolled-grid' });
+    this.rolledRewards.forEach(item => {
+      const chip = itemsGrid.createDiv({ cls: 'scabbard-rolled-card' });
+      const topRow = chip.createDiv({ cls: 'scabbard-rolled-top' });
+      topRow.createSpan({ cls: 'scabbard-badge badge-echelon', text: item.echelon });
+      topRow.createSpan({ cls: 'scabbard-badge', text: item.category });
+      chip.createEl('h5', { cls: 'scabbard-card-title', text: item.name });
+      if (item.flavor) {
+        chip.createEl('p', { cls: 'scabbard-card-flavor', text: item.flavor });
+      }
+      const eff = item.effect || (item.leveled_benefits ? Object.values(item.leveled_benefits)[0] : '');
+      if (eff) {
+        chip.createEl('div', { cls: 'scabbard-rolled-snippet', text: eff.slice(0, 140) + (eff.length > 140 ? '...' : '') });
+      }
+    });
   }
 
   renderLoading() {
@@ -586,6 +858,20 @@ class ScabbardView extends ItemView {
       list = list.filter(i => i.category === this.activeCategory);
     }
 
+    if (this.activeEchelon && this.activeEchelon !== 'All') {
+      list = list.filter(i => {
+        const ech = (i.echelon || '').toLowerCase();
+        const target = this.activeEchelon.toLowerCase();
+        if (target.includes('leveled')) return ech.includes('leveled');
+        if (target.includes('1st')) return ech.includes('1st') && !ech.includes('leveled');
+        if (target.includes('2nd')) return ech.includes('2nd');
+        if (target.includes('3rd')) return ech.includes('3rd');
+        if (target.includes('4th')) return ech.includes('4th');
+        if (target.includes('artifact')) return ech.includes('artifact');
+        return ech === target;
+      });
+    }
+
     if (this.searchQuery && this.searchQuery.trim()) {
       const q = this.searchQuery.toLowerCase().trim();
       list = list.filter(i =>
@@ -610,11 +896,17 @@ class ScabbardView extends ItemView {
     if (!list) list = container.createDiv({ cls: 'scabbard-cards-list' });
     list.empty();
 
+    // 1. Render Rolled Rewards Banner if active
+    this.renderRolledBanner(list);
+
+    // 2. Filter items
     const filtered = this.getFilteredItems();
 
     const meta = container.querySelector('#scabbard-meta-count');
     if (meta) {
-      meta.textContent = `Showing ${filtered.length} item(s) • ${this.activeCategory}`;
+      const selText = this.selectedItemIds.size > 0 ? ` • ${this.selectedItemIds.size} selected` : ' • (Ctrl+Click to select)';
+      const echText = this.activeEchelon !== 'All' ? ` • ${this.activeEchelon}` : '';
+      meta.textContent = `Showing ${filtered.length} item(s) • ${this.activeCategory}${echText}${selText}`;
     }
 
     if (filtered.length === 0) {
@@ -628,10 +920,24 @@ class ScabbardView extends ItemView {
   }
 
   renderCard(container, item) {
-    const card = container.createDiv({ cls: 'scabbard-card' });
+    const isSelected = this.selectedItemIds.has(item.id);
+    const card = container.createDiv({
+      cls: `scabbard-card ${isSelected ? 'scabbard-card-selected' : ''}`,
+      attr: { 'data-item-id': item.id }
+    });
+
+    // Ctrl+Click or Cmd+Click anywhere on card toggles selection
+    card.onclick = (e) => {
+      if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.scabbard-card-checkbox')) return;
+      if (e.ctrlKey || e.metaKey || e.shiftKey) {
+        e.preventDefault();
+        this.toggleItemSelection(item.id);
+      }
+    };
 
     const headerRow = card.createDiv({ cls: 'scabbard-card-header' });
-    const badges = headerRow.createDiv({ cls: 'scabbard-badges' });
+    const topRow = headerRow.createDiv({ cls: 'scabbard-card-top-row' });
+    const badges = topRow.createDiv({ cls: 'scabbard-badges' });
 
     const isWeapon = (item.category || '').toLowerCase().includes('weapon');
     const isArmor = (item.category || '').toLowerCase().includes('armor');
@@ -647,6 +953,19 @@ class ScabbardView extends ItemView {
                        item.source_book.includes('Mythic') ? 'Mythic' : 'Core';
       badges.createSpan({ cls: 'scabbard-badge', text: srcShort });
     }
+
+    // Checkbox for selection
+    const checkEl = topRow.createDiv({
+      cls: `scabbard-card-checkbox ${isSelected ? 'checked' : ''}`,
+      attr: { title: 'Select item (or Ctrl+Click card)' }
+    });
+    if (isSelected) {
+      setIcon(checkEl, 'check');
+    }
+    checkEl.onclick = (e) => {
+      e.stopPropagation();
+      this.toggleItemSelection(item.id);
+    };
 
     headerRow.createEl('h4', { cls: 'scabbard-card-title', text: item.name });
 
@@ -717,25 +1036,21 @@ class ScabbardView extends ItemView {
   }
 
   getTargetEditor() {
-    // 1. Check workspace.activeEditor (Obsidian 1.0+ official active editor tracker)
     if (this.app.workspace.activeEditor && this.app.workspace.activeEditor.editor) {
       return this.app.workspace.activeEditor.editor;
     }
 
-    // 2. Check getActiveViewOfType
     const MarkdownView = require('obsidian').MarkdownView;
     const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
     if (activeView && activeView.editor) {
       return activeView.editor;
     }
 
-    // 3. Check getMostRecentLeaf
     const mostRecent = this.app.workspace.getMostRecentLeaf();
     if (mostRecent && mostRecent.view && mostRecent.view.editor) {
       return mostRecent.view.editor;
     }
 
-    // 4. Check all open markdown leaves in workspace
     const mdLeaves = this.app.workspace.getLeavesOfType('markdown');
     for (const leaf of mdLeaves) {
       if (leaf.view && leaf.view.editor && leaf.view.getMode && leaf.view.getMode() !== 'preview') {
@@ -759,9 +1074,29 @@ class ScabbardView extends ItemView {
       editor.replaceSelection(textToInsert);
       new Notice(type === 'link' ? `Inserted link: [[${item.name}]]` : `Inserted card: ${item.name}`);
     } else {
-      // Fallback: Copy to clipboard so user can instantly Ctrl+V into whatever note they want!
       navigator.clipboard.writeText(textToInsert);
       new Notice(`Copied ${type === 'link' ? 'link' : 'card'} to clipboard! (Press Ctrl + V to paste)`);
+    }
+  }
+
+  insertMultipleItemsAtCursor(type = 'link', specificItems = null) {
+    const items = specificItems || this.allItems.filter(i => this.selectedItemIds.has(i.id));
+    if (!items || items.length === 0) return;
+
+    const editor = this.getTargetEditor();
+    let textToInsert = '';
+    if (type === 'link') {
+      textToInsert = items.map(i => `[[${i.name}]]`).join(', ');
+    } else {
+      textToInsert = items.map(i => this.plugin.formatMarkdownCard(i)).join('\n');
+    }
+
+    if (editor) {
+      editor.replaceSelection(textToInsert);
+      new Notice(`Inserted ${items.length} item(s) into active note`);
+    } else {
+      navigator.clipboard.writeText(textToInsert);
+      new Notice(`Copied ${items.length} item(s) to clipboard! (Press Ctrl + V to paste)`);
     }
   }
 }
