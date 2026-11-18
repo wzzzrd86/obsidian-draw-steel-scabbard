@@ -9,7 +9,7 @@ A dedicated Obsidian sidebar window that connects directly to your **Scabbard Co
 - **Dedicated Sidebar / Window View**: Click the **Sword** icon in the ribbon to open the Scabbard panel in your sidebar or floating pane.
 - **Weapon-First Browser**: Opens by default to all Draw Steel leveled weapons (with quick filter tabs for Armor, Trinkets, Consumables, and Artifacts).
 - **Multi-Item Selection (`Ctrl + Click`)**: Select multiple items with `Ctrl + Click` (or `Cmd + Click` on macOS, or tap the item checkbox). A dedicated batch bar lets you insert links, cards, or vault notes for all selected items at once.
-- **Random Loot Roller (`🎲 Random 2-3`)**: Select an echelon (or select items manually) and roll 2 to 3 random rewards with one click, complete with an instant "Insert All Links/Cards" action banner.
+- **Random Loot Roller (`Random 2-3`)**: Select an echelon (or select items manually) and roll 2 to 3 random rewards with one click, complete with an instant "Insert All Links/Cards" action banner.
 - **One-Click Linking (`+ Link`)**: Inserts an internal wikilink (e.g. `[[Glancing Bow]]` or `[[Longclaw]]`) directly at your cursor.
 - **Formatted Card Insertion (`+ Card`)**: Inserts a rich Obsidian Callout block with the weapon's keywords, lore, recipe, and 1st/5th/9th level stats directly into your active note.
 - **Auto-Generate Notes (`+ Note`)**: Automatically generates a standalone markdown note in `Compendium/Items/` complete with structured YAML frontmatter for Dataview queries.

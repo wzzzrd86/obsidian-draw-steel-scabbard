@@ -558,7 +558,7 @@ class ScabbardView extends ItemView {
       };
     });
 
-    // Tools Row: Echelon Filter + 🎲 Random Button
+    // Tools Row: Echelon Filter + Random Button
     const toolsRow = header.createDiv({ cls: 'scabbard-tools-row' });
 
     const echelonGroup = toolsRow.createDiv({ cls: 'scabbard-tool-group' });
@@ -648,7 +648,7 @@ class ScabbardView extends ItemView {
     if (count >= 2) {
       const rollSelBtn = btnGroup.createEl('button', {
         cls: 'scabbard-btn-sm scabbard-btn-random',
-        text: '🎲 Roll 2-3',
+        text: 'Roll 2-3',
         attr: { title: 'Pick 2-3 random items from these selected items' }
       });
       rollSelBtn.onclick = () => this.rollRandomItems(true);
@@ -756,7 +756,7 @@ class ScabbardView extends ItemView {
     this.selectedItemIds.clear();
     rolled.forEach(i => this.selectedItemIds.add(i.id));
 
-    new Notice(`🎲 Rolled ${rolled.length} random items: ${rolled.map(i => i.name).join(', ')}`);
+    new Notice(`Rolled ${rolled.length} random items: ${rolled.map(i => i.name).join(', ')}`);
     this.render();
   }
 
@@ -797,7 +797,7 @@ class ScabbardView extends ItemView {
 
     const rerollBtn = actionBox.createEl('button', {
       cls: 'scabbard-btn-sm scabbard-btn-random',
-      text: 'Re-roll 🎲',
+      text: 'Re-roll',
       attr: { title: 'Roll again from this echelon' }
     });
     rerollBtn.onclick = () => this.rollRandomItems();
