@@ -1,4 +1,4 @@
-const { Plugin, ItemView, WorkspaceLeaf, Notice, PluginSettingTab, Setting, SuggestModal, setIcon } = require('obsidian');
+const { Plugin, ItemView, WorkspaceLeaf, Notice, PluginSettingTab, Setting, SuggestModal, setIcon, requestUrl } = require('obsidian');
 
 const VIEW_TYPE_SCABBARD = 'draw-steel-scabbard-view';
 
@@ -128,11 +128,8 @@ class ScabbardPlugin extends Plugin {
     const baseUrl = (this.settings.serverUrl || 'https://scabbard.leweber.org').replace(/\/+$/, '');
     const url = `${baseUrl}/api/items`;
     try {
-      const response = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status} ${response.statusText}`);
-      }
-      const data = await response.json();
+      const response = await requestUrl({ url, headers: { 'Accept': 'application/json' } });
+      const data = response.json;
       this.itemsCache = data;
       this.itemsMap.clear();
       data.forEach(item => {
@@ -381,6 +378,13 @@ class ScabbardPlugin extends Plugin {
       }
 
       const keywordsYaml = (item.keywords || []).map(k => `  - "${k}"`).join('\n');
+      let effectContent = item.effect || 'None';
+      if (item.leveled_benefits && Object.keys(item.leveled_benefits).length > 0) {
+        effectContent = Object.entries(item.leveled_benefits)
+          .map(([lvl, txt]) => `### ${lvl}\n${txt}`)
+          .join('\n\n');
+      }
+
       const content = [
         `---`,
         `type: item`,
@@ -399,7 +403,7 @@ class ScabbardPlugin extends Plugin {
         item.flavor ? `> [!quote] Lore\n> *"${item.flavor}"*\n` : '',
         (item.item_prerequisite && item.item_prerequisite !== 'None') ? `> [!info] Downtime Crafting\n> **Prerequisites:** ${item.item_prerequisite}\n> **Goal:** ${item.project_goal || 'Standard'}\n` : '',
         `## Effect`,
-        item.effect || 'None',
+        effectContent,
         ``
       ].filter(Boolean).join('\n');
 
