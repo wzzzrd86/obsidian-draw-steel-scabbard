@@ -1,0 +1,10 @@
+{
+  "id": "draw-steel-scabbard",
+  "name": "Draw Steel Scabbard",
+  "version": "1.0.0",
+  "minAppVersion": "0.15.0",
+  "description": "Browse, search, and link Draw Steel weapons, treasures, and crafting items directly from Scabbard.",
+  "author": "Wzzzrd86",
+  "authorUrl": "https://github.com/wzzzrd86",
+  "isDesktopOnly": false
+}

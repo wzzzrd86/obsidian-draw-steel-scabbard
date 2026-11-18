@@ -1,0 +1,406 @@
+/* =====================================================================
+   Draw Steel Scabbard - Native Obsidian Theme Styling
+   Adapts automatically to any Obsidian theme (Dark/Light/Custom accents)
+===================================================================== */
+
+.scabbard-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background-color: var(--background-secondary);
+  color: var(--text-normal);
+  font-family: var(--font-interface, var(--font-text));
+}
+
+/* ---------------------------------------------------------------------
+   Header & Search Controls
+--------------------------------------------------------------------- */
+.scabbard-header {
+  padding: 10px 12px 6px 12px;
+  border-bottom: 1px solid var(--background-modifier-border);
+  background-color: var(--background-secondary);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scabbard-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scabbard-title {
+  font-family: var(--font-interface, var(--font-text));
+  font-weight: var(--font-bold, 700);
+  font-size: var(--font-ui-medium, 14px);
+  color: var(--text-accent, var(--h3-color, var(--text-normal)));
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+}
+
+.scabbard-badge-source {
+  font-family: var(--font-monospace);
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radius-s, 4px);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.scabbard-header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.scabbard-icon-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-s, 4px);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.scabbard-icon-btn:hover {
+  color: var(--text-accent, var(--text-normal));
+  background-color: var(--background-modifier-hover);
+}
+
+/* Search Input (Native Obsidian input style) */
+.scabbard-search-row {
+  position: relative;
+  width: 100%;
+}
+
+.scabbard-search-input {
+  width: 100%;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-s, 4px);
+  padding: 5px 26px 5px 10px;
+  font-size: var(--font-ui-smaller, 12px);
+  font-family: var(--font-interface, var(--font-text));
+  color: var(--text-normal);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.scabbard-search-input:focus {
+  border-color: var(--interactive-accent);
+  box-shadow: 0 0 0 1px var(--interactive-accent);
+}
+
+.scabbard-search-input::placeholder {
+  color: var(--text-faint);
+}
+
+.scabbard-search-clear {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+}
+
+.scabbard-search-clear:hover {
+  color: var(--text-error, #d16d8a);
+}
+
+/* Category Filter Pills */
+.scabbard-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.scabbard-pill {
+  font-size: 11px;
+  font-family: var(--font-interface, var(--font-text));
+  font-weight: var(--font-normal, 400);
+  padding: 2px 8px;
+  border-radius: var(--radius-s, 4px);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.scabbard-pill:hover {
+  color: var(--text-normal);
+  background-color: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+}
+
+.scabbard-pill.active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent, #ffffff);
+  border-color: var(--interactive-accent);
+  font-weight: var(--font-semibold, 600);
+}
+
+/* Meta count row */
+.scabbard-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-family: var(--font-interface, var(--font-text));
+  color: var(--text-faint);
+  padding-top: 2px;
+}
+
+/* ---------------------------------------------------------------------
+   Scrollable Cards List
+--------------------------------------------------------------------- */
+.scabbard-cards-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Individual Compendium Card (Matches Obsidian Callout / Container styling) */
+.scabbard-card {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m, 6px);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.scabbard-card:hover {
+  border-color: var(--interactive-accent, var(--background-modifier-border-hover));
+}
+
+.scabbard-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Badges (Tags style) */
+.scabbard-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.scabbard-badge {
+  font-size: 10px;
+  font-family: var(--font-monospace);
+  font-weight: var(--font-medium, 500);
+  padding: 1px 6px;
+  border-radius: var(--radius-s, 4px);
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.scabbard-badge.badge-weapon {
+  background: var(--tag-background, rgba(var(--color-orange-rgb, 224, 122, 74), 0.15));
+  color: var(--tag-color, var(--text-accent, #e07a4a));
+  border: 1px solid var(--tag-border, rgba(224, 122, 74, 0.3));
+}
+
+.scabbard-badge.badge-armor {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+}
+
+.scabbard-badge.badge-trinket {
+  background: var(--tag-background, rgba(var(--color-yellow-rgb, 243, 208, 120), 0.15));
+  color: var(--tag-color, var(--text-accent, #f3d078));
+  border: 1px solid var(--tag-border, rgba(243, 208, 120, 0.3));
+}
+
+.scabbard-badge.badge-consumable {
+  background: var(--tag-background, rgba(var(--color-red-rgb, 209, 109, 138), 0.15));
+  color: var(--tag-color, var(--text-error, #d16d8a));
+  border: 1px solid var(--tag-border, rgba(209, 109, 138, 0.3));
+}
+
+.scabbard-badge.badge-echelon {
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* Card Title (Uses theme heading font and accent) */
+.scabbard-card-title {
+  font-family: var(--font-text);
+  font-weight: var(--font-semibold, 600);
+  font-size: var(--font-ui-medium, 14px);
+  color: var(--h3-color, var(--text-normal));
+  margin: 0;
+  line-height: var(--line-height-normal, 1.3);
+}
+
+/* Flavor text */
+.scabbard-card-flavor {
+  font-family: var(--font-text);
+  font-style: italic;
+  font-size: var(--font-ui-smaller, 11px);
+  color: var(--text-muted);
+  border-left: 2px solid var(--interactive-accent, var(--background-modifier-border));
+  padding-left: 8px;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Keywords */
+.scabbard-card-keywords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.scabbard-keyword-tag {
+  font-size: 10px;
+  font-family: var(--font-monospace);
+  padding: 1px 5px;
+  border-radius: var(--radius-s, 3px);
+  background: var(--background-secondary);
+  color: var(--text-faint);
+  border: 1px solid var(--background-modifier-border);
+}
+
+/* Effect box (Callout / Blockquote appearance) */
+.scabbard-card-effect {
+  font-family: var(--font-text);
+  font-size: var(--font-ui-smaller, 11px);
+  line-height: 1.45;
+  color: var(--text-normal);
+  background: var(--background-secondary);
+  padding: 6px 8px;
+  border-radius: var(--radius-s, 4px);
+  border: 1px solid var(--background-modifier-border);
+  max-height: 160px;
+  overflow-y: auto;
+}
+
+.scabbard-card-effect strong {
+  color: var(--text-accent, var(--h4-color, var(--text-normal)));
+}
+
+/* Action Buttons Bar */
+.scabbard-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--background-modifier-border);
+}
+
+.scabbard-action-group {
+  display: flex;
+  gap: 4px;
+}
+
+/* Buttons matching Obsidian's native UI button styles */
+.scabbard-btn-sm {
+  font-size: 11px;
+  font-family: var(--font-interface, var(--font-text));
+  padding: 2px 7px;
+  border-radius: var(--radius-s, 4px);
+  background: var(--interactive-normal, var(--background-secondary));
+  border: 1px solid var(--background-modifier-border);
+  color: var(--text-muted);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.scabbard-btn-sm:hover {
+  background: var(--interactive-hover, var(--background-modifier-hover));
+  color: var(--text-normal);
+  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
+}
+
+/* Primary CTA button (+ Link) uses theme's interactive accent */
+.scabbard-btn-primary {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent, #ffffff);
+  border-color: var(--interactive-accent);
+  font-weight: var(--font-medium, 500);
+}
+
+.scabbard-btn-primary:hover {
+  background: var(--interactive-accent-hover, var(--interactive-accent));
+  color: var(--text-on-accent, #ffffff);
+}
+
+/* Empty & loading states */
+.scabbard-empty-state {
+  text-align: center;
+  padding: 24px 10px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller, 12px);
+}
+
+.scabbard-loading {
+  text-align: center;
+  padding: 24px 10px;
+  color: var(--text-accent, var(--text-muted));
+  font-family: var(--font-interface, var(--font-text));
+  font-size: var(--font-ui-smaller, 12px);
+}
+
+/* ---------------------------------------------------------------------
+   Interactive Hover Tooltip Popover (Matches Obsidian Callouts)
+--------------------------------------------------------------------- */
+.scabbard-hover-popover {
+  position: fixed;
+  z-index: 9999;
+  max-width: 380px;
+  min-width: 260px;
+  background: var(--background-secondary);
+  border: 1px solid var(--interactive-accent, var(--background-modifier-border));
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+  border-radius: var(--radius-m, 6px);
+  padding: 10px 12px;
+  font-family: var(--font-text);
+  color: var(--text-normal);
+  pointer-events: auto;
+  font-size: var(--font-ui-smaller, 12px);
+  line-height: 1.45;
+}
+
+.scabbard-hover-popover .scabbard-card-title {
+  color: var(--h3-color, var(--text-accent, var(--text-normal)));
+  font-size: var(--font-ui-medium, 14px);
+  margin-bottom: 4px;
+}
+
+.scabbard-linked-item {
+  color: var(--text-accent, var(--link-color)) !important;
+  text-decoration: underline dotted var(--text-accent, var(--link-color)) !important;
+  cursor: pointer;
+}
