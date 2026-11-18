@@ -553,6 +553,7 @@ class ScabbardView extends ItemView {
       });
       pill.onclick = () => {
         this.activeCategory = cat.key;
+        this.rolledRewards = [];
         this.renderHeader();
         this.renderCards();
       };
@@ -607,7 +608,7 @@ class ScabbardView extends ItemView {
   renderSelectionBarContent(bar) {
     bar.empty();
     const count = this.selectedItemIds.size;
-    if (count === 0) {
+    if (count === 0 || (this.rolledRewards && this.rolledRewards.length > 0)) {
       bar.style.display = 'none';
       return;
     }
@@ -760,8 +761,11 @@ class ScabbardView extends ItemView {
     this.render();
   }
 
-  renderRolledBanner(container) {
-    if (!this.rolledRewards || this.rolledRewards.length === 0) return;
+  renderRolledRewardsView(container) {
+    const meta = this.containerEl.querySelector('#scabbard-meta-count');
+    if (meta) {
+      meta.textContent = `Rolled ${this.rolledRewards.length} random item(s) • ${this.activeEchelon} • Showing rolled rewards only`;
+    }
 
     const banner = container.createDiv({ cls: 'scabbard-rolled-banner' });
 
@@ -786,7 +790,7 @@ class ScabbardView extends ItemView {
 
     const cardsBtn = actionBox.createEl('button', {
       cls: 'scabbard-btn-sm',
-      text: '+ Insert Cards',
+      text: '+ Insert All Cards',
       attr: { title: 'Insert formatted callout cards for all rolled items' }
     });
     cardsBtn.onmousedown = (e) => e.preventDefault();
@@ -802,30 +806,20 @@ class ScabbardView extends ItemView {
     });
     rerollBtn.onclick = () => this.rollRandomItems();
 
-    const closeBtn = actionBox.createEl('button', {
-      cls: 'scabbard-icon-btn',
-      attr: { title: 'Dismiss rolled banner' }
+    const showAllBtn = actionBox.createEl('button', {
+      cls: 'scabbard-btn-sm scabbard-btn-clear',
+      text: 'Show All Items',
+      attr: { title: 'Return to full items list' }
     });
-    setIcon(closeBtn, 'x');
-    closeBtn.onclick = () => {
+    showAllBtn.onclick = () => {
       this.rolledRewards = [];
+      this.selectedItemIds.clear();
       this.render();
     };
 
-    const itemsGrid = banner.createDiv({ cls: 'scabbard-rolled-grid' });
+    // Render ONLY the rolled items below the banner
     this.rolledRewards.forEach(item => {
-      const chip = itemsGrid.createDiv({ cls: 'scabbard-rolled-card' });
-      const topRow = chip.createDiv({ cls: 'scabbard-rolled-top' });
-      topRow.createSpan({ cls: 'scabbard-badge badge-echelon', text: item.echelon });
-      topRow.createSpan({ cls: 'scabbard-badge', text: item.category });
-      chip.createEl('h5', { cls: 'scabbard-card-title', text: item.name });
-      if (item.flavor) {
-        chip.createEl('p', { cls: 'scabbard-card-flavor', text: item.flavor });
-      }
-      const eff = item.effect || (item.leveled_benefits ? Object.values(item.leveled_benefits)[0] : '');
-      if (eff) {
-        chip.createEl('div', { cls: 'scabbard-rolled-snippet', text: eff.slice(0, 140) + (eff.length > 140 ? '...' : '') });
-      }
+      this.renderCard(container, item);
     });
   }
 
@@ -896,10 +890,13 @@ class ScabbardView extends ItemView {
     if (!list) list = container.createDiv({ cls: 'scabbard-cards-list' });
     list.empty();
 
-    // 1. Render Rolled Rewards Banner if active
-    this.renderRolledBanner(list);
+    // If random items were rolled, show ONLY the rolled items!
+    if (this.rolledRewards && this.rolledRewards.length > 0) {
+      this.renderRolledRewardsView(list);
+      return;
+    }
 
-    // 2. Filter items
+    // Normal browsing mode:
     const filtered = this.getFilteredItems();
 
     const meta = container.querySelector('#scabbard-meta-count');
